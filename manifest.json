@@ -1,15 +1,15 @@
 {
   "name": "تطبيق صيدليتي",
   "short_name": "صيدليتي",
-  "description": "نظام إدارة مبيعات ومخزن صيدليتي - صيدلية الديوان",
+  "description": "نظام إدارة مبيعات ومخزن صيدليتي",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0d9488",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f766e",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3024/3024310.png",
+      "src": "icon.png",
       "type": "image/png",
       "sizes": "512x512"
     }
