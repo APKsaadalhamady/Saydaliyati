@@ -19,7 +19,7 @@
             input, select { border: none !important; outline: none !important; background: transparent !important; appearance: none; }
         }
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .editable-input { width: 100%; background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 2px 4px; transition: 0.3s; }
+        .editable-input { width: 100%; background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 2px 4px; transition: 0.3s; text-align: inherit; }
         .editable-input:hover, .editable-input:focus { border-color: #0f766e; background: #fff; outline: none; }
     </style>
 </head>
@@ -63,7 +63,7 @@
                 </div>
                 <div><label class="block text-sm font-bold text-slate-700 mb-1">الكمية</label><input type="number" id="edit-qty" step="0.25" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
                 <div><label class="block text-sm font-bold text-slate-700 mb-1">تاريخ النفاذ</label><input type="month" id="edit-expiry" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                <div><!-- مسافة فارغة للترتيب --></div>
+                <div></div>
 
                 <div class="md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-y py-4 my-2 bg-slate-50 rounded px-2">
                     <div><label class="block text-sm font-bold text-slate-700 mb-1">سعر الشراء (د.ع.)</label><input type="number" id="edit-purchase-price" oninput="calcSellPrice('edit')" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
@@ -145,11 +145,8 @@
     <!-- شريط التنقل العلوي المحدث -->
     <nav class="bg-teal-700 text-white shadow-lg sticky top-0 z-40 no-print flex flex-col">
         <div class="container mx-auto px-4 pt-3 pb-1 grid grid-cols-3 items-center">
-            <!-- يمين فارغ لضبط التوسيط -->
             <div></div>
-            <!-- الوسط: اسم التطبيق -->
             <div class="text-4xl font-ruqaa tracking-wide text-center">صَيْدَلِيَّتِي</div>
-            <!-- اليسار: الأيقونات -->
             <div class="flex gap-4 items-center justify-end">
                 <button onclick="openModal('alerts-modal')" class="relative hover:text-teal-200 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
@@ -201,24 +198,35 @@
         <!-- ================= 2. الفاتورة ================= -->
         <section id="invoice-tab" class="tab-content hidden max-w-5xl mx-auto">
             <div id="invoice-print-area" class="bg-white p-6 md:p-10 rounded-xl shadow-lg border border-slate-200">
-                <div class="border-b-2 border-teal-600 pb-4 mb-6 flex flex-col md:flex-row justify-between items-center md:items-end gap-4">
-                    <div class="text-right w-full md:w-auto">
-                        <!-- تم إضافة خط الرقعة لاسم الصيدلية في الفاتورة -->
-                        <input type="text" id="inv-pharmacy-name" class="editable-input text-4xl font-black text-teal-800 mb-1 font-ruqaa w-full">
-                        <div class="flex items-center gap-1"><span class="text-sm font-bold text-slate-700">العنوان:</span><input type="text" id="inv-address" class="editable-input text-slate-500 text-sm"></div>
-                        <div class="flex items-center gap-1"><span class="text-sm font-bold text-slate-700">هاتف:</span><input type="text" id="inv-phone" class="editable-input text-slate-500 text-sm"></div>
-                    </div>
-                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 w-full md:w-auto">
-                        <div class="flex items-center gap-2 mb-1"><span class="text-sm font-bold text-slate-700 w-12">التاريخ:</span><input type="date" id="inv-date" class="editable-input text-sm text-slate-600"></div>
+                <!-- رأس الفاتورة بتصميم متوسط -->
+                <div class="border-b-2 border-teal-600 pb-6 mb-6 flex flex-col items-center text-center">
+                    <input type="text" id="inv-pharmacy-name" class="editable-input text-4xl font-black text-teal-800 mb-4 font-ruqaa w-full text-center">
+                    
+                    <div class="flex flex-wrap justify-center items-center gap-6 w-full">
+                        <div class="flex items-center gap-1">
+                            <span class="text-sm font-bold text-slate-700">العنوان:</span>
+                            <input type="text" id="inv-address" class="editable-input text-slate-500 text-sm w-48 text-center">
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="text-sm font-bold text-slate-700">هاتف:</span>
+                            <input type="text" id="inv-phone" class="editable-input text-slate-500 text-sm w-32 text-center">
+                        </div>
+                        <div class="flex items-center gap-1 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                            <span class="text-sm font-bold text-slate-700">التاريخ:</span>
+                            <input type="date" id="inv-date" class="editable-input text-sm text-slate-600 text-center">
+                        </div>
                     </div>
                 </div>
+                
                 <div class="flex items-center gap-3 mb-6 bg-slate-50 p-3 rounded-lg"><label class="font-bold text-slate-800 whitespace-nowrap">صادر إلى:</label><input type="text" placeholder="اكتب اسم الزبون أو الجهة..." class="editable-input font-semibold text-lg text-teal-700 placeholder-teal-300"></div>
+                
                 <div class="overflow-x-auto mb-6 min-h-[200px]">
                     <table class="w-full text-right border-collapse">
                         <thead><tr class="bg-teal-50 border-y-2 border-teal-600 text-teal-900"><th class="p-3 w-2/5">المادة / الدواء</th><th class="p-3 w-1/6">الوحدة</th><th class="p-3 w-1/6">الكمية</th><th class="p-3 w-1/6">السعر المفرد</th><th class="p-3 w-1/6">المجموع</th><th class="p-3 w-12 no-print"></th></tr></thead>
                         <tbody id="invoice-tbody"></tbody>
                     </table>
                 </div>
+                
                 <div class="flex flex-col md:flex-row justify-between items-center border-t-2 border-teal-600 pt-6 gap-6">
                     <div class="flex gap-4 w-full md:w-auto"><div class="w-32 h-20 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-sm">مكان الختم</div><div class="w-32 h-20 border-b-2 border-slate-300 flex items-end justify-center pb-2 text-slate-400 text-sm">التوقيع</div></div>
                     <div class="bg-teal-50 px-8 py-4 rounded-xl border border-teal-100 w-full md:w-auto text-center md:text-left">
@@ -248,24 +256,22 @@
                     <div><label class="block text-sm font-bold text-slate-700 mb-1">الوحدة</label><select id="entry-unit" class="w-full border border-slate-300 rounded p-2 outline-none bg-white focus:border-teal-500"><option value="باكيت">باكيت</option><option value="شريط">شريط</option><option value="حبة">حبة</option><option value="فيال">فيال</option><option value="امبول">امبول</option><option value="قطعة">قطعة</option></select></div>
                     <div><label class="block text-sm font-bold text-slate-700 mb-1">الكمية المدخلة</label><input type="number" id="entry-qty" step="0.25" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
                     <div><label class="block text-sm font-bold text-slate-700 mb-1">تاريخ النفاذ</label><input type="month" id="entry-expiry" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                    <div><!-- مسافة ترتيب --></div>
+                    <div></div>
 
-                    <!-- حقول الحسابات المالية (محدثة) -->
                     <div class="md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-y py-4 my-2 bg-teal-50 rounded px-2">
                         <div><label class="block text-sm font-bold text-slate-700 mb-1">سعر الشراء (المذخر)</label><input type="number" id="entry-purchase-price" oninput="calcSellPrice('entry')" class="w-full border border-teal-300 rounded p-2 outline-none focus:border-teal-500"></div>
                         <div><label class="block text-sm font-bold text-slate-700 mb-1">نسبة الربح %</label><input type="number" id="entry-profit-margin" oninput="calcSellPrice('entry')" class="w-full border border-teal-300 rounded p-2 outline-none focus:border-teal-500"></div>
                         <div><label class="block text-sm font-bold text-slate-700 mb-1">سعر البيع</label><input type="number" id="entry-price" oninput="calcMargin('entry')" class="w-full border border-teal-500 rounded p-2 outline-none font-bold text-teal-800"></div>
                     </div>
                     
-                    <!-- حقول المذخر المجهز -->
                     <div class="md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-b pb-4 my-2 bg-slate-50 rounded px-2">
                         <div><label class="block text-sm font-bold text-slate-700 mb-1">المذخر المجهز</label><input type="text" id="entry-supplier" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
                         <div><label class="block text-sm font-bold text-slate-700 mb-1">تاريخ فاتورة المذخر</label><input type="date" id="entry-supplier-date" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
                         <div><label class="block text-sm font-bold text-slate-700 mb-1">رقم الفاتورة (المذخر)</label><input type="text" id="entry-supplier-inv" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
                     </div>
 
-                    <div class="bg-orange-50 p-3 rounded-lg border border-orange-200 md:col-span-2"><label class="block text-sm font-bold text-slate-700 mb-1">تنبيه النواقص (عند وصول الكمية لـ)</label><input type="number" id="entry-low-stock" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-orange-500"></div>
-                    <div class="bg-red-50 p-3 rounded-lg border border-red-200 md:col-span-2"><label class="block text-sm font-bold text-slate-700 mb-1">تنبيه الاكسباير (قبل كم شهر من النفاذ؟)</label><input type="number" id="entry-exp-alert" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-red-500"></div>
+                    <div class="bg-orange-50 p-3 rounded-lg border border-orange-200 md:col-span-2"><label class="block text-sm font-bold text-slate-700 mb-1">تنبيه النواقص (عدد)</label><input type="number" id="entry-low-stock" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-orange-500"></div>
+                    <div class="bg-red-50 p-3 rounded-lg border border-red-200 md:col-span-2"><label class="block text-sm font-bold text-slate-700 mb-1">تنبيه الاكسباير (بالأشهر)</label><input type="number" id="entry-exp-alert" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-red-500"></div>
                 </div>
                 <button onclick="saveMedicine()" class="mt-6 bg-teal-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-teal-700 shadow w-full">➕ حفظ في المخزون وتحديث فواتير الطلبات</button>
             </div>
