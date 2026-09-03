@@ -44,10 +44,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('inv-time').value = `${hours}:${minutes}`;
 });
 
-// نظام الكاميرا وقراءة الباركود
+// نظام الكاميرا وقراءة الباركود والـ QR Code
 let html5QrCode;
+let currentTargetInput = null; // متغير لحفظ الحقل المراد تعبئته بالرقم
 
-function openCamera() {
+function openCamera(targetInputId) {
+    currentTargetInput = targetInputId; // تحديد الحقل الهدف
     const readerContainer = document.getElementById('reader-container');
     readerContainer.classList.remove('hidden');
     
@@ -56,13 +58,17 @@ function openCamera() {
     }
     
     html5QrCode.start(
-        { facingMode: "environment" },
+        { facingMode: "environment" }, // الكاميرا الخلفية دائماً
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
             closeCamera();
-            showModal('تمت القراءة بنجاح', `الباركود: ${decodedText}\n(سيتم جلب بيانات الدواء قريباً)`);
+            // إدراج النص المقروء في الحقل المحدد تلقائياً
+            if (currentTargetInput) {
+                document.getElementById(currentTargetInput).value = decodedText;
+            }
+            showModal('تمت القراءة بنجاح', `تم إدراج الرمز: ${decodedText}`);
         },
-        (errorMessage) => { /* تجاهل أخطاء عدم القراءة أثناء توجيه الكاميرا */ }
+        (errorMessage) => { /* تجاهل الأخطاء الصامتة أثناء محاولة التركيز */ }
     ).catch(err => {
         closeCamera();
         showModal('خطأ', 'يرجى إعطاء صلاحية الكاميرا للمتصفح.');
@@ -76,7 +82,7 @@ function closeCamera() {
     document.getElementById('reader-container').classList.add('hidden');
 }
 
-// اختصارات الكيبورد (احترافية وسرعة بالعمل)
+// اختصارات الكيبورد للكمبيوتر (احترافية وسرعة بالعمل)
 document.addEventListener('keydown', function(event) {
     if (event.key === 'F2') {
         event.preventDefault();
