@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق صيدليتي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+        /* إخفاء العناصر غير الضرورية عند طباعة الفاتورة */
+        @media print {
+            body * { visibility: hidden; }
+            #invoice-area, #invoice-area * { visibility: visible; }
+            #invoice-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 transition-colors duration-300">
+
+    <!-- شريط التنقل العلوي -->
+    <nav class="bg-teal-600 text-white p-4 shadow-md flex justify-between items-center no-print">
+        <div class="text-2xl font-bold">تطبيق صيدليتي ⚕️</div>
+        <div class="flex gap-4">
+            <button onclick="switchTab('pos')" class="hover:bg-teal-700 px-3 py-1 rounded bg-teal-800">فاتورة البيع</button>
+            <button onclick="switchTab('inventory')" class="hover:bg-teal-700 px-3 py-1 rounded">المخزن</button>
+        </div>
+    </nav>
+
+    <!-- منطقة الكاميرا (مخفية افتراضياً) -->
+    <div id="reader" class="hidden w-full max-w-md mx-auto mt-4 border-2 border-teal-500 rounded-lg shadow-lg no-print"></div>
+
+    <main class="p-6">
+        <!-- قسم الفاتورة (POS) -->
+        <section id="pos-tab" class="max-w-4xl mx-auto">
+            <div class="flex gap-2 mb-6 no-print">
+                <input type="text" id="search-bar" placeholder="بحث ذكي عن دواء أو امسح الباركود..." class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-teal-500 shadow-sm">
+                <button id="start-camera" class="bg-teal-600 text-white px-4 py-3 rounded-lg hover:bg-teal-700 shadow">📷 مسح</button>
+            </div>
+
+            <!-- الفاتورة القابلة للطباعة -->
+            <div id="invoice-area" class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                <div class="text-center mb-6 border-b pb-4">
+                    <h2 class="text-2xl font-bold text-teal-700">صيدليتي - صيدلية الديوان</h2>
+                    <p class="text-sm text-gray-500" id="invoice-date"></p>
+                </div>
+                
+                <div class="flex items-center gap-4 mb-4">
+                    <label class="font-bold">صادر إلى:</label>
+                    <input type="text" placeholder="اكتب اسم الزبون أو الجهة..." class="border-b-2 border-gray-300 focus:outline-none focus:border-teal-500 w-1/2 p-1">
+                </div>
+
+                <table class="w-full text-right border-collapse mb-6">
+                    <thead>
+                        <tr class="bg-teal-50 text-teal-800">
+                            <th class="p-3 border">المادة / الدواء</th>
+                            <th class="p-3 border">الوحدة</th>
+                            <th class="p-3 border">الكمية</th>
+                            <th class="p-3 border">السعر المفرد</th>
+                            <th class="p-3 border">المجموع</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoice-items">
+                        <!-- سيتم إضافة الأدوية هنا برمجياً -->
+                        <tr>
+                            <td class="p-3 border">Panadol Advance 500mg</td>
+                            <td class="p-3 border">شريط</td>
+                            <td class="p-3 border"><input type="number" value="1.5" class="w-16 border rounded p-1 text-center"></td>
+                            <td class="p-3 border">1000 د.ع</td>
+                            <td class="p-3 border font-bold">1500 د.ع</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="flex justify-between items-center border-t pt-4">
+                    <div class="text-xl font-bold text-red-600">الإجمالي: <span id="total-price">1500</span> د.ع</div>
+                    <div class="w-32 h-16 border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-sm">مكان الختم</div>
+                </div>
+            </div>
+
+            <button onclick="window.print()" class="mt-6 w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg no-print">🖨️ طباعة الفاتورة وحفظها</button>
+        </section>
+
+        <!-- قسم المخزن (مخفي افتراضياً) -->
+        <section id="inventory-tab" class="hidden max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md no-print">
+            <h2 class="text-2xl font-bold mb-4 text-teal-700">المخزن والإدخالات</h2>
+            <p class="text-gray-600">هنا سيتم عرض الأدوية، تواريخ النفاذ، وجرد الكميات...</p>
+        </section>
+    </main>
+
+    <!-- مكتبة الباركود (مؤقتة حتى يتم ربط الكاميرا بـ JS) -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="app.js"></script>
+</body>
+</html>
