@@ -31,6 +31,61 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 pb-24">
+    <!-- شاشة التحميل الأولية -->
+    <div id="auth-loading-screen" class="fixed inset-0 z-[300] bg-teal-900 flex flex-col justify-center items-center text-white">
+        <div class="text-5xl font-ruqaa mb-4">صَيْدَلِيَّتِي</div>
+        <div class="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-teal-200 text-sm font-semibold">جاري التحقق من الحساب السحابي...</p>
+    </div>
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="auth-screen" class="fixed inset-0 z-[250] bg-teal-900 flex justify-center items-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
+            <h1 class="text-4xl font-ruqaa text-teal-800 mb-2">صَيْدَلِيَّتِي</h1>
+            <p class="text-slate-500 mb-6 text-sm">نظام إدارة ومبيعات الصيدلية</p>
+            
+            <div id="auth-main-options" class="space-y-3">
+                <button onclick="showLoginBox()" class="w-full bg-teal-600 text-white p-3 rounded-xl font-bold hover:bg-teal-700 shadow">🔑 تسجيل الدخول</button>
+                <button onclick="showRegisterBox()" class="w-full bg-slate-100 text-slate-700 p-3 rounded-xl font-bold hover:bg-slate-200">📝 إنشاء حساب جديد</button>
+            </div>
+
+            <div id="login-box" class="hidden text-right space-y-4">
+                <h3 class="font-bold text-teal-800 border-b pb-2">تسجيل الدخول</h3>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">البريد الإلكتروني</label>
+                    <input type="email" id="login-email" class="w-full border rounded-lg p-3 outline-none focus:border-teal-600" placeholder="name@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">كلمة المرور</label>
+                    <input type="password" id="login-password" class="w-full border rounded-lg p-3 outline-none focus:border-teal-600" placeholder="••••••••">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="hideAuthForms()" class="flex-1 bg-slate-200 text-slate-700 p-3 rounded-lg font-bold">رجوع</button>
+                    <button onclick="handleLogin()" class="flex-1 bg-teal-600 text-white p-3 rounded-lg font-bold">دخول</button>
+                </div>
+            </div>
+
+            <div id="register-box" class="hidden text-right space-y-3">
+                <h3 class="font-bold text-teal-800 border-b pb-2">إنشاء حساب جديد</h3>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">الاسم الكامل</label>
+                    <input type="text" id="reg-name" class="w-full border rounded-lg p-2.5 outline-none focus:border-teal-600" placeholder="د. أحمد">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">البريد الإلكتروني</label>
+                    <input type="email" id="reg-email" class="w-full border rounded-lg p-2.5 outline-none focus:border-teal-600" placeholder="name@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">كلمة المرور</label>
+                    <input type="password" id="reg-password" class="w-full border rounded-lg p-2.5 outline-none focus:border-teal-600" placeholder="••••••••">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="hideAuthForms()" class="flex-1 bg-slate-200 text-slate-700 p-3 rounded-lg font-bold">رجوع</button>
+                    <button onclick="handleRegister()" class="flex-1 bg-teal-600 text-white p-3 rounded-lg font-bold">تسجيل</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- شاشة التحميل الأولية لمنع الـ Flickering أثناء التحقق من جلسة Firebase -->
     <div id="auth-loading-screen" class="fixed inset-0 z-[300] bg-teal-900 flex flex-col justify-center items-center text-white">
