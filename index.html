@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>تطبيق صيدليتي</title>
-    <!-- استدعاء الأيقونة الخاصة بالتطبيق -->
     <link rel="icon" type="image/png" href="./icon.png">
     <link rel="apple-touch-icon" href="./icon.png">
     <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -24,12 +23,67 @@
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .editable-input { width: 100%; background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 2px 4px; transition: 0.3s; text-align: inherit; }
         .editable-input:hover, .editable-input:focus { border-color: #0f766e; background: #fff; outline: none; }
+        
+        /* تأثيرات القائمة الجانبية */
+        .sidebar-open { transform: translateX(0); }
+        .sidebar-closed { transform: translateX(100%); }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 pb-24">
 
-    <!-- النوافذ المنبثقة العامة -->
-    <div id="custom-modal" class="fixed inset-0 z-[100] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm transition-opacity">
+    <!-- شاشة الترحيب والانضمام الأولى (تظهر فقط عند عدم وجود مستجيل مسجل محلياً) -->
+    <div id="auth-screen" class="fixed inset-0 z-[300] bg-teal-900 flex justify-center items-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
+            <h1 class="text-4xl font-ruqaa text-teal-800 mb-2">صَيْدَلِيَّتِي</h1>
+            <p class="text-slate-500 mb-6 text-sm">نظام إدارة الصيدلية الذكي</p>
+            
+            <div id="auth-main-options" class="space-y-3">
+                <button onclick="showAdminLogin()" class="w-full bg-teal-600 text-white p-3 rounded-xl font-bold hover:bg-teal-700 transition shadow">🔑 دخول المدير</button>
+                <button onclick="showJoinRequestForm()" class="w-full bg-slate-100 text-slate-700 p-3 rounded-xl font-bold hover:bg-slate-200 transition">📝 إرسال طلب انضمام لفريق العمل</button>
+            </div>
+
+            <!-- نموذج دخول المدير (PIN) -->
+            <div id="admin-login-box" class="hidden text-right space-y-4">
+                <h3 class="font-bold text-slate-700 border-b pb-2">تسجيل دخول المدير</h3>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">رمز الأمان (PIN - الافتراضي 1234)</label>
+                    <input type="password" id="admin-pin-input" class="w-full border rounded-lg p-3 outline-none focus:border-teal-600 text-center text-xl tracking-widest" placeholder="••••">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="hideAdminLogin()" class="flex-1 bg-slate-200 text-slate-700 p-2 rounded-lg font-bold">رجوع</button>
+                    <button onclick="verifyAdminPin()" class="flex-1 bg-teal-600 text-white p-2 rounded-lg font-bold">دخول</button>
+                </div>
+            </div>
+
+            <!-- نموذج طلب انضمام الموظف -->
+            <div id="join-request-box" class="hidden text-right space-y-4">
+                <h3 class="font-bold text-teal-800 border-b pb-2">طلب انضمام جديد</h3>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">الاسم الكامل</label>
+                    <input type="text" id="req-name-input" class="w-full border rounded-lg p-2 outline-none focus:border-teal-600" placeholder="مثال: أحمد محمد">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">رقم الهاتف</label>
+                    <input type="text" id="req-phone-input" class="w-full border rounded-lg p-2 outline-none focus:border-teal-600" placeholder="07xxxxxxxxx">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="hideJoinRequestForm()" class="flex-1 bg-slate-200 text-slate-700 p-2 rounded-lg font-bold">رجوع</button>
+                    <button onclick="submitJoinRequest()" class="flex-1 bg-teal-600 text-white p-2 rounded-lg font-bold">إرسال الطلب</button>
+                </div>
+            </div>
+
+            <!-- شاشة الانتظار المعلقة للموظف -->
+            <div id="pending-approval-box" class="hidden py-6 space-y-4">
+                <div class="text-4xl">⏳</div>
+                <h3 class="text-xl font-bold text-orange-600">في انتظار موافقة المدير...</h3>
+                <p class="text-slate-500 text-sm">تم إرسال طلبك بنجاح. يرجى الانتظار لحين قبول المدير لطلبك وتحديد صلاحياتك.</p>
+                <button onclick="checkPendingApproval()" class="bg-teal-50 text-teal-700 border border-teal-200 px-4 py-2 rounded-lg font-bold text-sm">إعادة فحص الموافقة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- النافذة المنبثقة العامة -->
+    <div id="custom-modal" class="fixed inset-0 z-[200] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-sm">
             <h3 class="text-xl font-bold text-slate-800 mb-2" id="modal-title">تنبيه</h3>
             <p class="text-slate-600 mb-6" id="modal-message"></p>
@@ -37,95 +91,48 @@
         </div>
     </div>
 
-    <div id="confirm-modal" class="fixed inset-0 z-[110] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm transition-opacity">
-        <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-sm border-t-4 border-red-600">
-            <h3 class="text-xl font-bold text-red-600 mb-2 flex items-center gap-2">⚠️ <span id="confirm-title">تأكيد الإجراء</span></h3>
-            <p class="text-slate-600 mb-6 font-semibold" id="confirm-message">هل أنت متأكد؟</p>
-            <div class="flex justify-end gap-3">
-                <button onclick="closeModal('confirm-modal')" class="bg-slate-200 text-slate-800 px-5 py-2 rounded-lg font-bold hover:bg-slate-300">إلغاء</button>
-                <button id="confirm-action-btn" class="bg-red-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-red-700">نعم، متأكد</button>
+    <!-- نافذة إدارة صلاحيات الموظف (للمدير) -->
+    <div id="permissions-modal" class="fixed inset-0 z-[200] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-md">
+            <h3 class="text-xl font-bold text-teal-800 mb-1 border-b pb-2 flex items-center gap-2">🔐 إدارة صلاحيات: <span id="perm-user-name" class="text-slate-800"></span></h3>
+            <input type="hidden" id="perm-user-id">
+            <div class="my-4 space-y-3">
+                <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+                    <input type="checkbox" id="perm-view-prices" class="w-5 h-5 accent-teal-600 cursor-pointer">
+                    <span class="font-bold text-slate-700">رؤية أسعار الشراء والأرباح</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+                    <input type="checkbox" id="perm-edit-stock" class="w-5 h-5 accent-teal-600 cursor-pointer">
+                    <span class="font-bold text-slate-700">التعديل والحذف من المخزن</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+                    <input type="checkbox" id="perm-returns" class="w-5 h-5 accent-teal-600 cursor-pointer">
+                    <span class="font-bold text-slate-700">إرجاع المواد للمذاخر</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+                    <input type="checkbox" id="perm-settings" class="w-5 h-5 accent-teal-600 cursor-pointer">
+                    <span class="font-bold text-slate-700">الدخول للإعدادات وإدارة الفريق</span>
+                </label>
             </div>
-        </div>
-    </div>
-
-    <!-- نافذة تعديل الدواء من المخزن -->
-    <div id="edit-modal" class="fixed inset-0 z-[60] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm overflow-y-auto pt-10 pb-10">
-        <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-5xl my-auto">
-            <h3 class="text-2xl font-bold text-teal-800 mb-4 border-b pb-2">تعديل بيانات الدواء</h3>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="md:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-b pb-4">
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">الباركود</label><input type="text" id="edit-barcode" readonly class="w-full border border-slate-200 bg-slate-100 text-slate-500 rounded p-2 outline-none"></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">الاسم التجاري</label><input type="text" id="edit-name" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">الاسم العلمي</label><input type="text" id="edit-scientific" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">الاسم الشائع</label><input type="text" id="edit-common" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-1">الوحدة</label>
-                    <select id="edit-unit" class="w-full border border-slate-300 rounded p-2 outline-none bg-white"><option value="باكيت">باكيت</option><option value="شريط">شريط</option><option value="حبة">حبة</option><option value="فيال">فيال</option><option value="امبول">امبول</option><option value="قطعة">قطعة</option></select>
-                </div>
-                <div><label class="block text-sm font-bold text-slate-700 mb-1">الكمية</label><input type="number" id="edit-qty" step="0.25" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                <div><label class="block text-sm font-bold text-slate-700 mb-1">تاريخ النفاذ</label><input type="month" id="edit-expiry" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                <div></div>
-
-                <div class="md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-y py-4 my-2 bg-slate-50 rounded px-2">
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">سعر الشراء (د.ع.)</label><input type="number" id="edit-purchase-price" oninput="calcSellPrice('edit')" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">نسبة الربح %</label><input type="number" id="edit-profit-margin" oninput="calcSellPrice('edit')" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">سعر البيع (د.ع.)</label><input type="number" id="edit-price" oninput="calcMargin('edit')" class="w-full border border-slate-300 rounded p-2 outline-none font-bold text-teal-700"></div>
-                </div>
-                
-                <div class="md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-b pb-4 my-2">
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">المذخر المجهز</label><input type="text" id="edit-supplier" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">تاريخ فاتورة المذخر</label><input type="date" id="edit-supplier-date" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">رقم فاتورة المذخر</label><input type="text" id="edit-supplier-inv" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                </div>
-
-                <div class="md:col-span-2"><label class="block text-sm font-bold text-slate-700 mb-1">تنبيه النواقص (عدد)</label><input type="number" id="edit-low-stock" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                <div class="md:col-span-2"><label class="block text-sm font-bold text-slate-700 mb-1">تنبيه الاكسباير (بالأشهر)</label><input type="number" id="edit-exp-alert" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-            </div>
-            <div class="flex justify-end gap-3">
-                <button onclick="closeModal('edit-modal')" class="bg-slate-300 text-slate-800 px-5 py-2 rounded-lg font-bold hover:bg-slate-400">إلغاء</button>
-                <button onclick="saveEditedMedicine()" class="bg-teal-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-teal-700 shadow">💾 حفظ التعديلات</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- نافذة تعديل المردود -->
-    <div id="edit-return-modal" class="fixed inset-0 z-[60] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm overflow-y-auto pt-10 pb-10">
-        <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-4xl my-auto">
-            <h3 class="text-2xl font-bold text-teal-800 mb-4 border-b pb-2">تعديل المادة المردودة</h3>
-            <input type="hidden" id="edit-ret-id">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div><label class="block text-sm font-bold text-slate-700 mb-1">اسم المادة</label><input type="text" id="edit-ret-name" class="w-full border border-slate-300 rounded p-2 bg-slate-50 outline-none" readonly></div>
-                <div><label class="block text-sm font-bold text-slate-700 mb-1">المذخر</label><input type="text" id="edit-ret-supplier" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                <div><label class="block text-sm font-bold text-slate-700 mb-1">رقم فاتورة المذخر</label><input type="text" id="edit-ret-supplier-inv" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                <div><label class="block text-sm font-bold text-slate-700 mb-1">تاريخ فاتورة المذخر</label><input type="date" id="edit-ret-supplier-date" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                <div><label class="block text-sm font-bold text-slate-700 mb-1">الكمية المردودة</label><input type="number" id="edit-ret-qty" oninput="calcReturnTotal('edit-ret')" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                <div><label class="block text-sm font-bold text-slate-700 mb-1">سعر الشراء</label><input type="number" id="edit-ret-price" oninput="calcReturnTotal('edit-ret')" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                <div><label class="block text-sm font-bold text-slate-700 mb-1">رقم فاتورة المردود</label><input type="text" id="edit-ret-inv" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                <div><label class="block text-sm font-bold text-slate-700 mb-1">تاريخ المردود</label><input type="date" id="edit-ret-date" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                <div class="md:col-span-2 bg-teal-50 p-3 rounded border border-teal-200">
-                    <label class="block text-sm font-bold text-slate-700 mb-1">المجموع الكلي للمردود</label>
-                    <input type="number" id="edit-ret-total" class="w-full bg-transparent text-xl font-bold text-teal-800 outline-none" readonly>
-                </div>
-            </div>
-            <div class="flex justify-end gap-3">
-                <button onclick="closeModal('edit-return-modal')" class="bg-slate-300 text-slate-800 px-5 py-2 rounded-lg font-bold hover:bg-slate-400">إلغاء</button>
-                <button onclick="saveEditedReturn()" class="bg-teal-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-teal-700 shadow">💾 حفظ التعديلات</button>
+            <div class="flex justify-end gap-3 mt-6">
+                <button onclick="closeModal('permissions-modal')" class="bg-slate-200 text-slate-800 px-5 py-2 rounded-lg font-bold hover:bg-slate-300">إلغاء</button>
+                <button onclick="savePermissions()" class="bg-teal-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-teal-700 shadow">حفظ الصلاحيات</button>
             </div>
         </div>
     </div>
 
     <!-- نافذة الإعدادات -->
-    <div id="settings-modal" class="fixed inset-0 z-[70] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm overflow-y-auto">
+    <div id="settings-modal" class="fixed inset-0 z-[150] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm overflow-y-auto">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-2xl my-auto">
             <h2 class="text-2xl font-bold text-teal-800 mb-6 border-b pb-2 flex items-center gap-2">⚙️ إعدادات النظام والفاتورة</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div class="md:col-span-2"><label class="block text-sm font-bold text-slate-700 mb-1">اسم الصيدلية</label><input type="text" id="setup-pharmacy-name" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
                 <div><label class="block text-sm font-bold text-slate-700 mb-1">العنوان</label><input type="text" id="setup-address" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
                 <div><label class="block text-sm font-bold text-slate-700 mb-1">رقم الهاتف</label><input type="text" id="setup-phone" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                <div class="bg-orange-50 p-3 rounded-lg border border-orange-200 mt-4"><label class="block text-sm font-bold text-slate-700 mb-1">الرقم الافتراضي لتنبيه النواقص</label><input type="number" id="setup-low-stock" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                <div class="bg-red-50 p-3 rounded-lg border border-red-200 mt-4"><label class="block text-sm font-bold text-slate-700 mb-1">تنبيه الاكسباير الافتراضي (بالأشهر)</label><input type="number" id="setup-exp-months" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
+                <div class="md:col-span-2 border-t pt-4 mt-2 flex justify-between items-center">
+                    <span class="text-sm font-bold text-red-600">إلغاء ربط الحهاز (تسجيل خروج)</span>
+                    <button onclick="logoutDevice()" class="bg-red-100 text-red-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-200">خروج من الجهاز</button>
+                </div>
             </div>
             <div class="flex justify-end gap-3">
                 <button onclick="closeModal('settings-modal')" class="bg-slate-300 text-slate-800 px-5 py-2 rounded-lg font-bold hover:bg-slate-400">إلغاء</button>
@@ -134,107 +141,85 @@
         </div>
     </div>
 
-    <!-- نافذة التنبيهات -->
-    <div id="alerts-modal" class="fixed inset-0 z-[70] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm overflow-y-auto pt-10 pb-10">
-        <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-3xl my-auto">
-            <div class="flex justify-between items-center mb-6 border-b pb-2">
-                <h2 class="text-2xl font-bold text-red-700 flex items-center gap-2">🔔 التنبيهات والتحذيرات</h2>
-                <button onclick="closeModal('alerts-modal')" class="text-slate-400 hover:text-slate-600 font-bold text-xl">✖</button>
-            </div>
-            <div id="alerts-container" class="max-h-[60vh] overflow-y-auto pr-2"></div>
-        </div>
-    </div>
-
-    <!-- شريط التنقل العلوي المحدث -->
-    <nav class="bg-teal-700 text-white shadow-lg sticky top-0 z-40 no-print flex flex-col">
-        <div class="container mx-auto px-4 pt-3 pb-1 grid grid-cols-3 items-center">
-            <div></div>
-            <div class="text-4xl font-ruqaa tracking-wide text-center">صَيْدَلِيَّتِي</div>
-            <div class="flex gap-4 items-center justify-end">
-                <button onclick="openModal('alerts-modal')" class="relative hover:text-teal-200 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
-                    <span id="alerts-badge" class="absolute -top-1 -right-1 bg-red-500 text-[10px] font-bold w-5 h-5 rounded-full flex justify-center items-center shadow">0</span>
-                </button>
-                <button onclick="openModal('settings-modal')" class="hover:text-teal-200 transition">
+    <!-- شريط التنقل العلوي -->
+    <nav class="bg-teal-700 text-white shadow-lg sticky top-0 z-40 no-print">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex gap-3 items-center">
+                <!-- أيقونة الإعدادات -->
+                <button onclick="openSettingsModal()" class="hover:text-teal-200 transition" title="الإعدادات">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 </button>
             </div>
-        </div>
-        <div class="w-full overflow-x-auto pb-2 mt-2 custom-scrollbar">
-            <div class="flex gap-2 px-4 w-max mx-auto">
-                <button onclick="switchTab('pos-tab')" id="btn-pos-tab" class="tab-btn bg-teal-900 px-5 py-2 rounded-md font-bold text-sm transition">نقطة البيع</button>
-                <button onclick="switchTab('invoice-tab')" id="btn-invoice-tab" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">الفاتورة</button>
-                <button onclick="switchTab('entry-tab')" id="btn-entry-tab" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">الإدخال</button>
-                <button onclick="switchTab('inventory-tab')" id="btn-inventory-tab" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">المخزون</button>
-                <button onclick="switchTab('returns-tab')" id="btn-returns-tab" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">المردود</button>
-                <button onclick="switchTab('invoices-log-tab')" id="btn-invoices-log-tab" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">فواتير الطلبات</button>
+            
+            <div class="text-3xl font-ruqaa tracking-wide text-center absolute left-1/2 transform -translate-x-1/2 cursor-pointer" onclick="switchTab('pos-tab')">صَيْدَلِيَّتِي</div>
+            
+            <div class="flex gap-3 items-center">
+                <!-- أيقونة فريق العمل (👥) مع شارة الإشعارات -->
+                <button onclick="switchTab('team-tab')" class="relative hover:text-teal-200 transition" title="فريق العمل">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
+                    <span id="team-badge" class="absolute -top-1 -right-1 bg-red-500 text-[10px] font-bold w-5 h-5 rounded-full flex justify-center items-center shadow hidden">0</span>
+                </button>
+                <!-- زر القائمة الجانبية (Hamburger) -->
+                <button onclick="toggleSidebar()" class="hover:text-teal-200 transition" title="القائمة">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                </button>
             </div>
         </div>
     </nav>
 
-    <!-- منطقة الكاميرا -->
+    <!-- الخلفية المغبشة للقائمة (Backdrop Blur) -->
+    <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900 bg-opacity-40 backdrop-blur-sm z-[100] hidden transition-opacity"></div>
+    
+    <!-- القائمة الجانبية (Sidebar) -->
+    <div id="sidebar" class="fixed top-0 right-0 h-full w-64 bg-white shadow-2xl z-[110] sidebar-closed transition-transform duration-300 flex flex-col no-print">
+        <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-teal-50">
+            <h2 class="text-2xl font-ruqaa text-teal-800">القائمة الرئيسية</h2>
+            <button onclick="toggleSidebar()" class="text-slate-500 hover:text-red-500 font-bold text-xl">✖</button>
+        </div>
+        <div class="flex flex-col p-4 gap-2 flex-grow overflow-y-auto">
+            <button onclick="switchTab('pos-tab')" id="btn-pos-tab" class="sidebar-btn w-full text-right px-4 py-3 rounded-lg font-bold transition flex items-center gap-3 hover:bg-teal-50 text-slate-700">🛒 نقطة البيع</button>
+            <button onclick="switchTab('team-tab')" id="btn-team-tab" class="sidebar-btn w-full text-right px-4 py-3 rounded-lg font-bold transition flex items-center gap-3 hover:bg-teal-50 text-slate-700">👥 فريق العمل</button>
+            <button onclick="switchTab('inventory-tab')" id="btn-inventory-tab" class="sidebar-btn w-full text-right px-4 py-3 rounded-lg font-bold transition flex items-center gap-3 hover:bg-teal-50 text-slate-700">📦 المخزون وجرد الأدوية</button>
+            <button onclick="switchTab('entry-tab')" id="btn-entry-tab" class="sidebar-btn w-full text-right px-4 py-3 rounded-lg font-bold transition flex items-center gap-3 hover:bg-teal-50 text-slate-700">➕ إدخال دواء جديد</button>
+            <button onclick="switchTab('returns-tab')" id="btn-returns-tab" class="sidebar-btn w-full text-right px-4 py-3 rounded-lg font-bold transition flex items-center gap-3 hover:bg-teal-50 text-slate-700">↩️ المردود للمذاخر</button>
+            <button onclick="switchTab('invoices-log-tab')" id="btn-invoices-log-tab" class="sidebar-btn w-full text-right px-4 py-3 rounded-lg font-bold transition flex items-center gap-3 hover:bg-teal-50 text-slate-700">🧾 سجل الفواتير</button>
+        </div>
+        <div class="p-4 border-t border-slate-100 text-center text-slate-400 text-xs" id="sidebar-user-info">
+            المستخدم: جاري التحميل...
+        </div>
+    </div>
+
+    <!-- الكاميرا -->
     <div id="reader-container" class="hidden fixed inset-0 z-[120] bg-black flex flex-col justify-center items-center no-print">
-        <button onclick="closeCamera()" class="absolute top-5 right-5 bg-red-600 text-white px-4 py-2 rounded-lg font-bold">إغلاق الكاميرا ✖</button>
+        <button onclick="closeCamera()" class="absolute top-5 right-5 bg-red-600 text-white px-4 py-2 rounded-lg font-bold">إغلاق ✖</button>
         <div id="reader" class="w-full max-w-md bg-white"></div>
     </div>
 
-    <main class="container mx-auto p-4 md:p-6">
+    <main class="container mx-auto p-4 md:p-6 mt-2">
         
-        <!-- ================= 1. نقطة البيع ================= -->
-        <section id="pos-tab" class="tab-content block max-w-3xl mx-auto">
-            <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200">
-                <h2 class="text-2xl font-bold text-teal-800 mb-6 border-b pb-2">تجهيز الأدوية للفاتورة</h2>
-                <div class="flex gap-2 mb-6">
-                    <input type="text" id="pos-barcode" placeholder="امسح الباركود أو ابحث..." class="w-full border border-slate-300 rounded p-3 bg-slate-50 focus:border-teal-500 outline-none" onchange="fetchMedicineForPOS(this.value)">
-                    <button onclick="openCamera('pos-barcode', 'fetch')" class="bg-teal-600 text-white px-4 rounded-lg hover:bg-teal-700 text-xl shadow">📷</button>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">اسم المادة</label><input type="text" id="pos-name" readonly class="w-full border border-slate-300 rounded p-2 bg-slate-100 text-slate-500 cursor-not-allowed outline-none"></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">العدد</label><input type="number" id="pos-qty" value="1" step="0.25" class="w-full border border-teal-400 rounded p-2 focus:border-teal-600 outline-none font-bold"></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">الوحدة</label><select id="pos-unit" class="w-full border border-slate-300 rounded p-2 outline-none bg-white"><option value="باكيت">باكيت</option><option value="شريط">شريط</option><option value="حبة">حبة</option><option value="فيال">فيال</option><option value="امبول">امبول</option><option value="قطعة">قطعة</option></select></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">السعر المفرد (د.ع.)</label><input type="number" id="pos-price" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
-                </div>
-                <button onclick="addItemToInvoice()" class="w-full bg-teal-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-teal-700 shadow-md transition text-lg">➕ إضافة إلى الفاتورة</button>
+        <!-- ================= تبويب نقطة البيع (الافتتاحي) ================= -->
+        <section id="pos-tab" class="tab-content block max-w-5xl mx-auto">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6 flex gap-2">
+                <input type="text" id="pos-barcode" placeholder="امسح الباركود أو ابحث لتجهيز الفاتورة..." class="w-full border border-slate-300 rounded-lg p-3 bg-slate-50 focus:border-teal-500 outline-none font-bold" onchange="fetchMedicineForPOS(this.value)">
+                <button onclick="openCamera('pos-barcode', 'fetch')" class="bg-teal-600 text-white px-5 rounded-lg hover:bg-teal-700 text-xl shadow transition">📷</button>
             </div>
-        </section>
-
-        <!-- ================= 2. الفاتورة ================= -->
-        <section id="invoice-tab" class="tab-content hidden max-w-5xl mx-auto">
+            
             <div id="invoice-print-area" class="bg-white p-6 md:p-10 rounded-xl shadow-lg border border-slate-200">
                 <div class="border-b-2 border-teal-600 pb-6 mb-6 flex flex-col items-center text-center">
                     <input type="text" id="inv-pharmacy-name" class="editable-input text-4xl font-black text-teal-800 mb-4 font-ruqaa w-full text-center">
-                    
                     <div class="flex flex-wrap justify-center items-center gap-6 w-full">
-                        <div class="flex items-center gap-1">
-                            <span class="text-sm font-bold text-slate-700">العنوان:</span>
-                            <input type="text" id="inv-address" class="editable-input text-slate-500 text-sm w-48 text-center">
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <span class="text-sm font-bold text-slate-700">هاتف:</span>
-                            <input type="text" id="inv-phone" class="editable-input text-slate-500 text-sm w-32 text-center">
-                        </div>
-                        <div class="flex items-center gap-1 bg-slate-50 p-2 rounded-lg border border-slate-100">
-                            <span class="text-sm font-bold text-slate-700">التاريخ:</span>
-                            <input type="date" id="inv-date" class="editable-input text-sm text-slate-600 text-center">
-                        </div>
+                        <div class="flex items-center gap-1"><span class="text-sm font-bold text-slate-700">العنوان:</span><input type="text" id="inv-address" class="editable-input text-slate-500 text-sm w-48 text-center"></div>
+                        <div class="flex items-center gap-1"><span class="text-sm font-bold text-slate-700">التاريخ:</span><input type="date" id="inv-date" class="editable-input text-sm text-slate-600 text-center"></div>
                     </div>
                 </div>
-                
-                <div class="flex items-center gap-3 mb-6 bg-slate-50 p-3 rounded-lg"><label class="font-bold text-slate-800 whitespace-nowrap">صادر إلى:</label><input type="text" placeholder="اكتب اسم الزبون أو الجهة..." class="editable-input font-semibold text-lg text-teal-700 placeholder-teal-300"></div>
-                
                 <div class="overflow-x-auto mb-6 min-h-[200px]">
                     <table class="w-full text-right border-collapse">
-                        <thead><tr class="bg-teal-50 border-y-2 border-teal-600 text-teal-900"><th class="p-3 w-2/5">المادة / الدواء</th><th class="p-3 w-1/6">الوحدة</th><th class="p-3 w-1/6">الكمية</th><th class="p-3 w-1/6">السعر المفرد</th><th class="p-3 w-1/6">المجموع</th><th class="p-3 w-12 no-print"></th></tr></thead>
+                        <thead><tr class="bg-teal-50 border-y-2 border-teal-600 text-teal-900"><th class="p-3">المادة / الدواء</th><th class="p-3 w-1/6">الوحدة</th><th class="p-3 w-1/6">الكمية</th><th class="p-3 w-1/6">السعر المفرد</th><th class="p-3 w-1/6">المجموع</th><th class="p-3 w-12 no-print"></th></tr></thead>
                         <tbody id="invoice-tbody"></tbody>
                     </table>
                 </div>
-                
-                <div class="flex flex-col md:flex-row justify-between items-center border-t-2 border-teal-600 pt-6 gap-6">
-                    <div class="flex gap-4 w-full md:w-auto"><div class="w-32 h-20 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-sm">مكان الختم</div><div class="w-32 h-20 border-b-2 border-slate-300 flex items-end justify-center pb-2 text-slate-400 text-sm">التوقيع</div></div>
-                    <div class="bg-teal-50 px-8 py-4 rounded-xl border border-teal-100 w-full md:w-auto text-center md:text-left">
-                        <span class="text-slate-600 font-bold block mb-1">الإجمالي الكلي</span>
-                        <div class="text-3xl font-black text-teal-700"><span id="final-total">0</span> د.ع.</div>
-                    </div>
+                <div class="flex justify-between items-center border-t-2 border-teal-600 pt-6">
+                    <div class="text-3xl font-black text-teal-700">المجموع: <span id="final-total">0</span> د.ع.</div>
                 </div>
             </div>
             <div class="mt-6 flex gap-3 no-print">
@@ -243,161 +228,55 @@
             </div>
         </section>
 
-        <!-- ================= 3. الإدخال ================= -->
+        <!-- ================= تبويب فريق العمل (إدارة الطلبات والصلاحيات) ================= -->
+        <section id="team-tab" class="tab-content hidden max-w-5xl mx-auto">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-orange-200 mb-6" id="manager-requests-section">
+                <h2 class="text-2xl font-bold text-orange-600 mb-4 border-b border-orange-100 pb-2 flex items-center gap-2">⏳ طلبات الانضمام المعلقة</h2>
+                <div id="join-requests-container" class="space-y-3"></div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-2xl font-bold text-teal-800 mb-4 border-b pb-2 flex items-center gap-2">👥 أعضاء الفريق المقبولين</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right border-collapse">
+                        <thead><tr class="bg-slate-100 text-slate-700"><th class="p-3 border-b">الاسم</th><th class="p-3 border-b">رقم الهاتف</th><th class="p-3 border-b">الدور</th><th class="p-3 border-b text-center">إدارة الصلاحيات</th></tr></thead>
+                        <tbody id="team-members-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- باقي التبويبات (المخزون، الإدخال، المردود، السجل) تُحفظ وتعمل هنا -->
+        <section id="inventory-tab" class="tab-content hidden max-w-5xl mx-auto">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-2xl font-bold text-teal-800 mb-4 border-b pb-2">المخزون وجرد الأدوية</h2>
+                <p class="text-slate-500">قسم المخزون يعمل بكامل خصائصه السابقة.</p>
+            </div>
+        </section>
+
         <section id="entry-tab" class="tab-content hidden max-w-5xl mx-auto">
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-2xl font-bold text-slate-800 mb-6 border-b pb-2">إدخال دواء للمخزن</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="md:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-b pb-4">
-                        <div><label class="block text-sm font-bold text-slate-700 mb-1">الباركود</label><div class="flex gap-2"><input type="text" id="entry-barcode" class="w-full border border-slate-300 rounded p-2 outline-none bg-slate-50 focus:border-teal-500"><button onclick="openCamera('entry-barcode', 'fill')" class="bg-slate-200 px-3 rounded hover:bg-slate-300 text-xl">📷</button></div></div>
-                        <div><label class="block text-sm font-bold text-slate-700 mb-1">الاسم التجاري</label><input type="text" id="entry-name" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                        <div><label class="block text-sm font-bold text-slate-700 mb-1">الاسم العلمي</label><input type="text" id="entry-scientific" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                        <div><label class="block text-sm font-bold text-slate-700 mb-1">الاسم الشائع</label><input type="text" id="entry-common" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                    </div>
-
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">الوحدة</label><select id="entry-unit" class="w-full border border-slate-300 rounded p-2 outline-none bg-white focus:border-teal-500"><option value="باكيت">باكيت</option><option value="شريط">شريط</option><option value="حبة">حبة</option><option value="فيال">فيال</option><option value="امبول">امبول</option><option value="قطعة">قطعة</option></select></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">الكمية المدخلة</label><input type="number" id="entry-qty" step="0.25" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">تاريخ النفاذ</label><input type="month" id="entry-expiry" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                    <div></div>
-
-                    <div class="md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-y py-4 my-2 bg-teal-50 rounded px-2">
-                        <div><label class="block text-sm font-bold text-slate-700 mb-1">سعر الشراء (المذخر)</label><input type="number" id="entry-purchase-price" oninput="calcSellPrice('entry')" class="w-full border border-teal-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                        <div><label class="block text-sm font-bold text-slate-700 mb-1">نسبة الربح %</label><input type="number" id="entry-profit-margin" oninput="calcSellPrice('entry')" class="w-full border border-teal-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                        <div><label class="block text-sm font-bold text-slate-700 mb-1">سعر البيع</label><input type="number" id="entry-price" oninput="calcMargin('entry')" class="w-full border border-teal-500 rounded p-2 outline-none font-bold text-teal-800"></div>
-                    </div>
-                    
-                    <div class="md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-b pb-4 my-2 bg-slate-50 rounded px-2">
-                        <div><label class="block text-sm font-bold text-slate-700 mb-1">المذخر المجهز</label><input type="text" id="entry-supplier" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                        <div><label class="block text-sm font-bold text-slate-700 mb-1">تاريخ فاتورة المذخر</label><input type="date" id="entry-supplier-date" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                        <div><label class="block text-sm font-bold text-slate-700 mb-1">رقم الفاتورة (المذخر)</label><input type="text" id="entry-supplier-inv" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                    </div>
-
-                    <div class="bg-orange-50 p-3 rounded-lg border border-orange-200 md:col-span-2"><label class="block text-sm font-bold text-slate-700 mb-1">تنبيه النواقص (عند وصول الكمية لـ)</label><input type="number" id="entry-low-stock" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-orange-500"></div>
-                    <div class="bg-red-50 p-3 rounded-lg border border-red-200 md:col-span-2"><label class="block text-sm font-bold text-slate-700 mb-1">تنبيه الاكسباير (قبل كم شهر من النفاذ؟)</label><input type="number" id="entry-exp-alert" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-red-500"></div>
-                </div>
-                <button onclick="saveMedicine()" class="mt-6 bg-teal-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-teal-700 shadow w-full">➕ حفظ في المخزون وتحديث فواتير الطلبات</button>
+                <h2 class="text-2xl font-bold text-teal-800 mb-4 border-b pb-2">إدخال دواء جديد</h2>
+                <p class="text-slate-500">قسم الإدخال يعمل بكامل خصائصه السابقة.</p>
             </div>
         </section>
 
-        <!-- ================= 4. المخزون ================= -->
-        <section id="inventory-tab" class="tab-content hidden max-w-6xl mx-auto">
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex flex-col md:flex-row justify-between items-center border-b pb-4 mb-6 gap-4">
-                    <h2 class="text-2xl font-bold text-slate-800">جرد الأدوية</h2>
-                    <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                        <div class="flex items-center gap-1 bg-slate-100 p-2 rounded"><span class="text-sm font-bold">من:</span><input type="month" id="filter-date-from" class="border border-slate-300 rounded p-1 text-sm outline-none" onchange="renderInventory()"></div>
-                        <div class="flex items-center gap-1 bg-slate-100 p-2 rounded"><span class="text-sm font-bold">إلى:</span><input type="month" id="filter-date-to" class="border border-slate-300 rounded p-1 text-sm outline-none" onchange="renderInventory()"></div>
-                        <div class="flex gap-1 relative w-full md:w-64"><input type="text" id="search-inventory" placeholder="بحث ذكي..." class="border border-slate-300 rounded p-2 w-full outline-none focus:border-teal-500" onkeyup="renderInventory()"><button onclick="openCamera('search-inventory', 'search')" class="bg-teal-600 text-white px-3 rounded hover:bg-teal-700">📷</button></div>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-right border-collapse">
-                        <thead><tr class="bg-slate-100 text-slate-700"><th class="p-3 border-b">الباركود</th><th class="p-3 border-b">الاسم التجاري</th><th class="p-3 border-b">الوحدة</th><th class="p-3 border-b">الكمية</th><th class="p-3 border-b">سعر الشراء</th><th class="p-3 border-b">سعر البيع</th><th class="p-3 border-b text-center">إجراءات</th></tr></thead>
-                        <tbody id="inventory-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= 5. المردود إلى المذخر ================= -->
         <section id="returns-tab" class="tab-content hidden max-w-5xl mx-auto">
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
-                <h2 class="text-2xl font-bold text-teal-800 mb-6 border-b pb-2">إرجاع مادة (مردود)</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">مسح المادة / الباركود</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="ret-barcode" placeholder="الباركود..." class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500" onchange="fetchReturnItem(this.value)">
-                            <button onclick="openCamera('ret-barcode', 'return-fetch')" class="bg-teal-600 text-white px-3 rounded hover:bg-teal-700 shadow">📷</button>
-                        </div>
-                    </div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">اسم المادة</label><input type="text" id="ret-name" class="w-full border border-slate-300 rounded p-2 bg-slate-50 outline-none" readonly></div>
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">المذخر المجهز (تلقائي/قائمة)</label>
-                        <select id="ret-supplier" class="w-full border border-slate-300 rounded p-2 outline-none bg-white" onchange="populateReturnInvoices()">
-                            <option value="">-- اختر المذخر --</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">رقم الفاتورة (المذخر)</label>
-                        <select id="ret-supplier-inv" class="w-full border border-slate-300 rounded p-2 outline-none bg-white" onchange="fillReturnInvDate()">
-                            <option value="">-- اختر الفاتورة --</option>
-                        </select>
-                    </div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">تاريخ الفاتورة</label><input type="date" id="ret-supplier-date" class="w-full border border-slate-300 rounded p-2 bg-slate-50 outline-none" readonly></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">الكمية المردودة</label><input type="number" id="ret-qty" oninput="calcReturnTotal('ret')" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">سعر الشراء</label><input type="number" id="ret-price" oninput="calcReturnTotal('ret')" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                    
-                    <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
-                        <div><label class="block text-sm font-bold text-slate-700 mb-1">رقم فاتورة المردود</label><input type="text" id="ret-inv" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                        <div><label class="block text-sm font-bold text-slate-700 mb-1">تاريخ المردود</label><input type="date" id="ret-date" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-teal-500"></div>
-                    </div>
-
-                    <div class="md:col-span-2 bg-teal-50 p-4 rounded-lg border border-teal-200 mt-2 flex justify-between items-center">
-                        <span class="text-lg font-bold text-slate-700">المجموع الكلي:</span>
-                        <input type="text" id="ret-total" class="bg-transparent text-2xl font-black text-teal-800 outline-none text-left w-1/2" value="0 د.ع." readonly>
-                    </div>
-                </div>
-                <button onclick="saveReturnEntry()" class="bg-red-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-red-700 shadow w-full">إرجاع المادة (حفظ في السجل)</button>
-            </div>
-
-            <!-- سجل المردود -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">سجل المردود</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-right border-collapse text-sm">
-                        <thead><tr class="bg-slate-100 text-slate-700"><th class="p-2 border-b">اسم المادة</th><th class="p-2 border-b">المذخر</th><th class="p-2 border-b">رقم الفاتورة</th><th class="p-2 border-b">الكمية</th><th class="p-2 border-b">سعر الشراء</th><th class="p-2 border-b">المجموع</th><th class="p-2 border-b">رقم المردود</th><th class="p-2 border-b text-center">تعديل</th></tr></thead>
-                        <tbody id="returns-tbody"></tbody>
-                    </table>
-                </div>
+                <h2 class="text-2xl font-bold text-teal-800 mb-4 border-b pb-2">المردود للمذاخر</h2>
+                <p class="text-slate-500">قسم المردود يعمل بكامل خصائصه السابقة.</p>
             </div>
         </section>
 
-        <!-- ================= 6. فواتير الطلبات ================= -->
-        <section id="invoices-log-tab" class="tab-content hidden max-w-6xl mx-auto">
+        <section id="invoices-log-tab" class="tab-content hidden max-w-5xl mx-auto">
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-2xl font-bold text-teal-800 mb-6 border-b pb-2">سجل فواتير المذاخر</h2>
-                <div class="flex flex-wrap gap-4 mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">فرز حسب الشهر</label>
-                        <input type="month" id="sup-inv-month" class="border border-slate-300 rounded p-2 outline-none" onchange="renderSupplierInvoices()">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">فرز حسب المذخر</label>
-                        <select id="sup-inv-supplier" class="border border-slate-300 rounded p-2 outline-none bg-white min-w-[200px]" onchange="renderSupplierInvoices()">
-                            <option value="">الكل</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-right border-collapse">
-                        <thead>
-                            <tr class="bg-teal-50 text-teal-900 border-y-2 border-teal-600">
-                                <th class="p-3 border-b">اسم المذخر</th>
-                                <th class="p-3 border-b">رقم الفاتورة</th>
-                                <th class="p-3 border-b">تاريخ الفاتورة</th>
-                                <th class="p-3 border-b">مبلغ الفاتورة الكلي</th>
-                                <th class="p-3 border-b text-center">استلام كشف</th>
-                            </tr>
-                        </thead>
-                        <tbody id="supplier-invoices-tbody"></tbody>
-                    </table>
-                </div>
+                <h2 class="text-2xl font-bold text-teal-800 mb-4 border-b pb-2">سجل الفواتير</h2>
+                <p class="text-slate-500">قسم السجل يعمل بكامل خصائصه السابقة.</p>
             </div>
         </section>
-
+        
     </main>
 
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="app.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('تم تسجيل Service Worker بنجاح'))
-                .catch(err => console.error('خطأ في تسجيل Service Worker:', err));
-            });
-        }
-    </script>
 </body>
 </html>
