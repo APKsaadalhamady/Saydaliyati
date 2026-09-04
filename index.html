@@ -24,12 +24,123 @@
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .editable-input { width: 100%; background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 2px 4px; transition: 0.3s; text-align: inherit; }
         .editable-input:hover, .editable-input:focus { border-color: #0f766e; background: #fff; outline: none; }
+        
+        /* تأثيرات القائمة الجانبية */
+        .sidebar-open { transform: translateX(0); }
+        .sidebar-closed { transform: translateX(100%); }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 pb-24">
 
+    <!-- شاشة التحميل الأولية لمنع الـ Flickering أثناء التحقق من جلسة Firebase -->
+    <div id="auth-loading-screen" class="fixed inset-0 z-[300] bg-teal-900 flex flex-col justify-center items-center text-white">
+        <div class="text-6xl font-ruqaa mb-4">صَيْدَلِيَّتِي</div>
+        <div class="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-teal-200 text-sm font-semibold">جاري تحميل بيانات الصيدلية...</p>
+    </div>
+
+    <!-- شاشة المصادقة وتسجيل الدخول -->
+    <div id="auth-screen" class="fixed inset-0 z-[250] bg-teal-900 flex justify-center items-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
+            <h1 class="text-4xl font-ruqaa text-teal-800 mb-2">صَيْدَلِيَّتِي</h1>
+            <p class="text-slate-500 mb-6 text-sm">نظام إدارة ومبيعات الصيدلية السحابي</p>
+            
+            <!-- أزرار البداية -->
+            <div id="auth-main-options" class="space-y-3">
+                <button onclick="showLoginBox()" class="w-full bg-teal-600 text-white p-3 rounded-xl font-bold hover:bg-teal-700 shadow transition">🔑 تسجيل الدخول</button>
+                <button onclick="showRegisterBox()" class="w-full bg-slate-100 text-slate-700 p-3 rounded-xl font-bold hover:bg-slate-200 transition">📝 إنشاء حساب جديد</button>
+            </div>
+
+            <!-- نموذج تسجيل الدخول -->
+            <div id="login-box" class="hidden text-right space-y-4">
+                <h3 class="font-bold text-teal-800 border-b pb-2">تسجيل الدخول للحساب</h3>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">البريد الإلكتروني</label>
+                    <input type="email5" id="login-email" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:border-teal-600" placeholder="name@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">كلمة المرور</label>
+                    <input type="password" id="login-password" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:border-teal-600" placeholder="••••••••">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="hideAuthForms()" class="flex-1 bg-slate-200 text-slate-700 p-3 rounded-lg font-bold hover:bg-slate-300">رجوع</button>
+                    <button onclick="handleLogin()" class="flex-1 bg-teal-600 text-white p-3 rounded-lg font-bold hover:bg-teal-700 shadow">دخول</button>
+                </div>
+            </div>
+
+            <!-- نموذج إنشاء حساب -->
+            <div id="register-box" class="hidden text-right space-y-3">
+                <h3 class="font-bold text-teal-800 border-b pb-2">إنشاء حساب صيدلي جديد</h3>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">الاسم الكامل</label>
+                    <input type="text" id="reg-name" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-teal-600" placeholder="د. أحمد محمد">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">البريد الإلكتروني</label>
+                    <input type="email" id="reg-email" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-teal-600" placeholder="name@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">كلمة المرور</label>
+                    <input type="password" id="reg-password" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:border-teal-600" placeholder="••••••••">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="hideAuthForms()" class="flex-1 bg-slate-200 text-slate-700 p-3 rounded-lg font-bold hover:bg-slate-300">رجوع</button>
+                    <button onclick="handleRegister()" class="flex-1 bg-teal-600 text-white p-3 rounded-lg font-bold hover:bg-teal-700 shadow">تسجيل</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة اختيار الصيدلية (إنشاء أو انضمام) للمستخدم الجديد -->
+    <div id="pharmacy-setup-screen" class="fixed inset-0 z-[240] bg-slate-900 bg-opacity-70 flex justify-center items-center p-4 hidden backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg">
+            <h2 class="text-2xl font-bold text-teal-800 mb-2 text-center">إعداد الصيدلية</h2>
+            <p class="text-slate-500 text-sm mb-6 text-center">حسابك غير مرتبطة بأي صيدلية حالياً. يرجى إنشاء صيدلية جديدة أو الانضمام لفريق عمل قائم.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- قسم إنشاء صيدلية -->
+                <div class="border border-teal-200 bg-teal-50/50 p-5 rounded-xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-teal-800 text-lg mb-1">إنشاء صيدلية</h3>
+                        <p class="text-xs text-slate-600 mb-4">أنشئ صيدليتك الخاصة وكن مالكاً للنظام مع صلاحيات إدارة الفريق الكاملة.</p>
+                        <input type="text" id="new-pharmacy-name" class="w-full border border-slate-300 rounded-lg p-2.5 bg-white mb-2 text-sm outline-none focus:border-teal-600" placeholder="اسم الصيدلية...">
+                        <input type="text" id="new-pharmacy-address" class="w-full border border-slate-300 rounded-lg p-2.5 bg-white text-sm outline-none focus:border-teal-600" placeholder="العنوان (اختياري)...">
+                    </div>
+                    <button onclick="createPharmacyAction()" class="mt-4 w-full bg-teal-600 text-white py-2.5 rounded-lg font-bold hover:bg-teal-700 shadow text-sm transition">إنشاء الصيدلية</button>
+                </div>
+
+                <!-- قسم الانضمام لصيدلية -->
+                <div class="border border-slate-200 bg-slate-50 p-5 rounded-xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg mb-1">الانضمام لصيدلية</h3>
+                        <p class="text-xs text-slate-600 mb-4">أدخل رمز الصيدلية (Pharmacy Code) المزوّد من قِبل مدير الصيدلية لإرسال طلب انضمام.</p>
+                        <input type="text" id="join-pharmacy-code" class="w-full border border-slate-300 rounded-lg p-2.5 bg-white uppercase text-center font-bold tracking-widest text-sm outline-none focus:border-teal-600" placeholder="PH-XXXXXX">
+                    </div>
+                    <button onclick="joinPharmacyAction()" class="mt-4 w-full bg-slate-700 text-white py-2.5 rounded-lg font-bold hover:bg-slate-800 shadow text-sm transition">إرسال طلب الانضمام</button>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button onclick="handleLogout()" class="text-red-600 text-sm font-bold hover:underline">تسجيل الخروج من الحساب</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة حالة الانتظار (إذا كان الطلب Pending) -->
+    <div id="pending-approval-screen" class="fixed inset-0 z-[240] bg-slate-900 bg-opacity-70 flex justify-center items-center p-4 hidden backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
+            <div class="text-5xl mb-3">⏳</div>
+            <h3 class="text-xl font-bold text-orange-600 mb-2">طلب الانضمام قيد المراجعة</h3>
+            <p class="text-slate-600 text-sm mb-6">تم إرسال طلب انضمامك إلى الصيدلية بنجاح. يجدر الانتظار ريثما يقوم مدير الصيدلية بالموافقة على طلبك وتحديد صلاحياتك.</p>
+            <div class="space-y-2">
+                <button onclick="checkJoinStatus()" class="w-full bg-teal-600 text-white py-2.5 rounded-lg font-bold hover:bg-teal-700 text-sm">🔄 التحقق من حالة الطلب</button>
+                <button onclick="handleLogout()" class="w-full bg-slate-100 text-slate-700 py-2.5 rounded-lg font-bold hover:bg-slate-200 text-sm">تسجيل الخروج</button>
+            </div>
+        </div>
+    </div>
+
     <!-- النوافذ المنبثقة العامة -->
-    <div id="custom-modal" class="fixed inset-0 z-[100] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm transition-opacity">
+    <div id="custom-modal" class="fixed inset-0 z-[200] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-sm">
             <h3 class="text-xl font-bold text-slate-800 mb-2" id="modal-title">تنبيه</h3>
             <p class="text-slate-600 mb-6" id="modal-message"></p>
@@ -37,7 +148,7 @@
         </div>
     </div>
 
-    <div id="confirm-modal" class="fixed inset-0 z-[110] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm transition-opacity">
+    <div id="confirm-modal" class="fixed inset-0 z-[210] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-sm border-t-4 border-red-600">
             <h3 class="text-xl font-bold text-red-600 mb-2 flex items-center gap-2">⚠️ <span id="confirm-title">تأكيد الإجراء</span></h3>
             <p class="text-slate-600 mb-6 font-semibold" id="confirm-message">هل أنت متأكد؟</p>
@@ -126,10 +237,54 @@
                 <div><label class="block text-sm font-bold text-slate-700 mb-1">رقم الهاتف</label><input type="text" id="setup-phone" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
                 <div class="bg-orange-50 p-3 rounded-lg border border-orange-200 mt-4"><label class="block text-sm font-bold text-slate-700 mb-1">الرقم الافتراضي لتنبيه النواقص</label><input type="number" id="setup-low-stock" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
                 <div class="bg-red-50 p-3 rounded-lg border border-red-200 mt-4"><label class="block text-sm font-bold text-slate-700 mb-1">تنبيه الاكسباير الافتراضي (بالأشهر)</label><input type="number" id="setup-exp-months" class="w-full border border-slate-300 rounded p-2 outline-none"></div>
+                
+                <!-- رمز الصيدلية (للنسخ ومشاركة المعرف مع الموظفين) -->
+                <div class="md:col-span-2 bg-teal-50 p-4 rounded-lg border border-teal-200 mt-2 flex justify-between items-center">
+                    <div>
+                        <span class="block text-xs font-bold text-teal-900 mb-1">رمز الصيدلية (لربط الموظفين):</span>
+                        <span id="display-pharmacy-code" class="text-lg font-black text-teal-800 tracking-wider">---</span>
+                    </div>
+                    <button onclick="copyPharmacyCode()" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-teal-700">📋 نسخ الرمز</button>
+                </div>
             </div>
-            <div class="flex justify-end gap-3">
-                <button onclick="closeModal('settings-modal')" class="bg-slate-300 text-slate-800 px-5 py-2 rounded-lg font-bold hover:bg-slate-400">إلغاء</button>
-                <button onclick="saveSettings()" class="bg-teal-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-teal-700 shadow">💾 حفظ وتطبيق</button>
+            <div class="flex justify-between items-center pt-4 border-t">
+                <button onclick="handleLogout()" class="bg-red-50 text-red-600 px-4 py-2 rounded-lg font-bold hover:bg-red-100 text-sm">🚪 تسجيل الخروج</button>
+                <div class="flex gap-3">
+                    <button onclick="closeModal('settings-modal')" class="bg-slate-300 text-slate-800 px-5 py-2 rounded-lg font-bold hover:bg-slate-400">إلغاء</button>
+                    <button onclick="saveSettings()" class="bg-teal-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-teal-700 shadow">💾 حفظ وتطبيق</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تعديل الصلاحيات المتقدمة للعضو (Permissions Modal) -->
+    <div id="permissions-modal" class="fixed inset-0 z-[200] hidden bg-slate-900 bg-opacity-50 flex justify-center items-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold text-teal-800 mb-1 border-b pb-2 flex items-center justify-between">
+                <span>🔐 إدارة صلاحيات: <span id="perm-user-name" class="text-slate-800"></span></span>
+                <button onclick="closeModal('permissions-modal')" class="text-slate-400 hover:text-slate-600 text-lg">✖</button>
+            </h3>
+            <input type="hidden" id="perm-user-id">
+
+            <!-- اختيار قالب الدور (Role Template) -->
+            <div class="my-4 bg-slate-50 p-3 rounded-lg border">
+                <label class="block text-xs font-bold text-slate-700 mb-1">اختر الدور الجاهز (Template):</label>
+                <select id="role-template-select" onchange="applyRoleTemplate(this.value)" class="w-full border border-slate-300 rounded p-2 bg-white text-sm outline-none">
+                    <option value="custom">مخصص (Custom)</option>
+                    <option value="manager">مدير فرعي (Manager)</option>
+                    <option value="pharmacist">صيدلي (Pharmacist)</option>
+                    <option value="cashier">كاشير مبيعات (Cashier)</option>
+                </select>
+            </div>
+
+            <!-- أقسام الصلاحيات التفصيلية -->
+            <div id="permissions-checkboxes-container" class="space-y-4 my-4">
+                <!-- يتم توليدها ديناميكياً بناءً على Permission Registry -->
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6 pt-3 border-t">
+                <button onclick="closeModal('permissions-modal')" class="bg-slate-200 text-slate-800 px-5 py-2 rounded-lg font-bold text-sm">إلغاء</button>
+                <button onclick="saveCustomPermissions()" class="bg-teal-600 text-white px-6 py-2 rounded-lg font-bold text-sm shadow">حفظ الصلاحيات</button>
             </div>
         </div>
     </div>
@@ -148,26 +303,39 @@
     <!-- شريط التنقل العلوي المحدث -->
     <nav class="bg-teal-700 text-white shadow-lg sticky top-0 z-40 no-print flex flex-col">
         <div class="container mx-auto px-4 pt-3 pb-1 grid grid-cols-3 items-center">
-            <div></div>
-            <div class="text-4xl font-ruqaa tracking-wide text-center">صَيْدَلِيَّتِي</div>
-            <div class="flex gap-4 items-center justify-end">
-                <button onclick="openModal('alerts-modal')" class="relative hover:text-teal-200 transition">
+            <!-- الجهة اليسرى: التنبيهات وإدارة الفريق والإعدادات -->
+            <div class="flex gap-3 items-center">
+                <button onclick="openModal('alerts-modal')" class="relative hover:text-teal-200 transition" title="التنبيهات">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
                     <span id="alerts-badge" class="absolute -top-1 -right-1 bg-red-500 text-[10px] font-bold w-5 h-5 rounded-full flex justify-center items-center shadow">0</span>
                 </button>
-                <button onclick="openModal('settings-modal')" class="hover:text-teal-200 transition">
+
+                <!-- أيقونة فريق العمل الجديدة المجاورة لزر الإعدادات مع شارة الطلبات المعلقة -->
+                <button id="nav-team-btn" onclick="switchTab('team-tab')" class="relative hover:text-teal-200 transition hidden" title="إدارة الفريق">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
+                    <span id="team-badge" class="absolute -top-1 -right-1 bg-red-500 text-[10px] font-bold w-5 h-5 rounded-full flex justify-center items-center shadow hidden">0</span>
+                </button>
+
+                <button onclick="openModal('settings-modal')" class="hover:text-teal-200 transition" title="الإعدادات">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 </button>
             </div>
+
+            <!-- المنتصف: الشعار -->
+            <div class="text-4xl font-ruqaa tracking-wide text-center">صَيْدَلِيَّتِي</div>
+            <div></div>
         </div>
+
+        <!-- أزرار التبويبات العلوية -->
         <div class="w-full overflow-x-auto pb-2 mt-2 custom-scrollbar">
-            <div class="flex gap-2 px-4 w-max mx-auto">
-                <button onclick="switchTab('pos-tab')" id="btn-pos-tab" class="tab-btn bg-teal-900 px-5 py-2 rounded-md font-bold text-sm transition">نقطة البيع</button>
-                <button onclick="switchTab('invoice-tab')" id="btn-invoice-tab" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">الفاتورة</button>
-                <button onclick="switchTab('entry-tab')" id="btn-entry-tab" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">الإدخال</button>
-                <button onclick="switchTab('inventory-tab')" id="btn-inventory-tab" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">المخزون</button>
-                <button onclick="switchTab('returns-tab')" id="btn-returns-tab" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">المردود</button>
-                <button onclick="switchTab('invoices-log-tab')" id="btn-invoices-log-tab" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">فواتير الطلبات</button>
+            <div id="nav-tabs-container" class="flex gap-2 px-4 w-max mx-auto">
+                <button onclick="switchTab('pos-tab')" id="btn-pos-tab" data-perm="pos.view" class="tab-btn bg-teal-900 px-5 py-2 rounded-md font-bold text-sm transition">نقطة البيع</button>
+                <button onclick="switchTab('invoice-tab')" id="btn-invoice-tab" data-perm="pos.view" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">الفاتورة</button>
+                <button onclick="switchTab('entry-tab')" id="btn-entry-tab" data-perm="inventory.add" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">الإدخال</button>
+                <button onclick="switchTab('inventory-tab')" id="btn-inventory-tab" data-perm="inventory.view" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">المخزون</button>
+                <button onclick="switchTab('returns-tab')" id="btn-returns-tab" data-perm="returns.view" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">المردود</button>
+                <button onclick="switchTab('invoices-log-tab')" id="btn-invoices-log-tab" data-perm="invoices.view" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition">فواتير الطلبات</button>
+                <button onclick="switchTab('team-tab')" id="btn-team-tab" data-perm="team.view" class="tab-btn hover:bg-teal-600 px-5 py-2 rounded-md font-bold text-sm transition hidden">فريق العمل</button>
             </div>
         </div>
     </nav>
@@ -386,10 +554,42 @@
             </div>
         </section>
 
+        <!-- ================= 7. إدارة الفريق والصلاحيات (Team Tab) ================= -->
+        <section id="team-tab" class="tab-content hidden max-w-5xl mx-auto">
+            <!-- طلبات الانضمام المعلقة (تظهر فقط لمن يملك صلاحية approval) -->
+            <div id="team-requests-wrapper" class="bg-white p-6 rounded-xl shadow-sm border border-orange-200 mb-6 hidden">
+                <h2 class="text-2xl font-bold text-orange-600 mb-4 border-b border-orange-100 pb-2 flex items-center gap-2">⏳ طلبات الانضمام المعلقة</h2>
+                <div id="join-requests-container" class="space-y-3">
+                    <p class="text-slate-400 text-sm">لا توجد طلبات انضمام حالياً.</p>
+                </div>
+            </div>
+
+            <!-- جدول أعضاء الفريق الحاليين -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-2xl font-bold text-teal-800 mb-4 border-b pb-2 flex items-center gap-2">👥 أعضاء الفريق الحاليين</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700">
+                                <th class="p-3 border-b">الاسم</th>
+                                <th class="p-3 border-b">البريد الإلكتروني</th>
+                                <th class="p-3 border-b">الدور (Role)</th>
+                                <th class="p-3 border-b text-center">الإجراءات والصلاحيات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="team-members-tbody">
+                            <!-- يتم تعبئتها ديناميكياً -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
     </main>
 
+    <!-- استدعاء سكريبت Firebase والشفرة البرمجية المحدثة للربط -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
